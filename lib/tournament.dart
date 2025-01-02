@@ -1,13 +1,30 @@
 import 'package:flutter/material.dart';
 
 class TournamentPage extends StatelessWidget {
-  const TournamentPage({super.key, required this.id});
-  final String id;
-  Future<Map> tournament;
+  TournamentPage({super.key, required this.id});
+  final int id;
+  late Future<Map> tournament;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: FutureBuilder(future:tournament , builder: (context, tournament) => AppBar(title: ),)
-    )
+      appBar: AppBar(
+        title: FutureBuilder<Map>(
+          future: tournament,
+          builder: (context, snapshot) {
+            return Text(
+              snapshot.data!['Name'],
+            );
+          },
+        ),
+      ),
+      body: FutureBuilder<Map>(
+        future: tournament,
+        builder: (context, snapshot) {
+          return Column(
+            children: [Text(snapshot.data!['Description'])],
+          );
+        },
+      ),
+    );
   }
 }

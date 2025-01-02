@@ -72,8 +72,12 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: const Center(
-        child: TournamentList(),
+      body: Center(
+        child: Column(children: [
+            UICard("All", Container(height: 200,
+              child:TournamentList(type: "all")))
+            
+        ],),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
@@ -85,7 +89,8 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class TournamentList extends StatefulWidget {
-  const TournamentList({super.key});
+  const TournamentList({super.key, required this.type});
+  final String type;
   @override
   State<TournamentList> createState() => _TournamentList();
 }
@@ -97,7 +102,7 @@ class _TournamentList extends State<TournamentList> {
   @override
   void initState() {
     super.initState();
-    getTournaments();
+    getTournaments(widget.type);
     controller.addListener(() {
       if (controller.position.atEdge) {
         if (controller.position.pixels == 0) {
@@ -109,9 +114,9 @@ class _TournamentList extends State<TournamentList> {
     });
   }
 
-  Future<void> getTournaments() async {
+  Future<void> getTournaments(String type) async {
     final response =
-        await http.get(Uri.parse('http://115.165.225.39:3000/api/list/all'));
+        await http.get(Uri.parse('http://localhost:3000/api/list/$type'));
     if (response.statusCode == 200) {
       Map vals = jsonDecode(response.body) as Map<String, dynamic>;
       print(vals['body'][0].runtimeType);

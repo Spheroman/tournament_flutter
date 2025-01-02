@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class TournamentPage extends StatelessWidget {
   TournamentPage({super.key, required this.id});
-  final int id;
+  final String id;
   late Future<Map> tournament;
   @override
   Widget build(BuildContext context) {

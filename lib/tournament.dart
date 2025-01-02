@@ -20,6 +20,7 @@ class TournamentPage extends StatefulWidget {
 class _TournamentPageState extends State<TournamentPage> {
   late Future<Map> tournament = getTournament(widget.id);
   late Future<bool> saved = getJoined(widget.id);
+  var key = UniqueKey();
 
   Future<Map> getTournament(String id) async {
     if(!await storage.containsKey(key: "token")) {
@@ -70,10 +71,11 @@ class _TournamentPageState extends State<TournamentPage> {
   Future<bool> updateJoined(String id, Future<bool> val) async {
     var token = await storage.read(key: "token");
     var uid = await storage.read(key: "userId");
+    var ret = !await val;
     var body = jsonEncode({
       "user_id": uid,
       "relation": "joined",
-      "value": !await val
+      "value": ret
     });
     print(body);
     final response = await http.post(Uri.parse('$url/api/tournament/$id/setRelation'),
@@ -84,9 +86,9 @@ class _TournamentPageState extends State<TournamentPage> {
         body: body);
     print(response.body.toString());
     if(response.statusCode == 200) {
-      return !await val;
+      return ret;
     }
-    return await val;
+    return !ret;
   }
 
   @override
@@ -105,6 +107,7 @@ class _TournamentPageState extends State<TournamentPage> {
         ),
       ),
       body: FutureBuilder<Map>(
+        key: key,
         future: tournament,
         builder: (context, snapshot) {
           if(snapshot.hasData) {
@@ -112,8 +115,12 @@ class _TournamentPageState extends State<TournamentPage> {
               children: [
                 Text(snapshot.data?['Description']),
                 TextButton(
-                  onPressed: () { saved = updateJoined(widget.id, saved); },
-                  child: FutureBuilder(future: saved, builder: (context, snapshot) {
+                  onPressed: () => setState(() {
+                    saved = updateJoined(widget.id, saved);
+                  }),
+                  child: FutureBuilder(
+                      future: saved,
+                      builder: (context, snapshot) {
                     if(snapshot.hasData && snapshot.data!){
                       return const Text("Saved");
                     }

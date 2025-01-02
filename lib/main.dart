@@ -112,7 +112,6 @@ class _MyHomePageState extends State<MyHomePage> {
           builder: (context, value) {
             List ret = ["All", "Next"];
             if (value.hasData && value.data!) {
-              ret.add("Saved");
               ret.add("Owned");
             }
             return ListView.builder(
@@ -152,7 +151,7 @@ class _MyHomePageState extends State<MyHomePage> {
             if(val != null && context.mounted) {context.push(val);}
           });
         },
-        tooltip: 'Increment',
+        tooltip: 'New Tournament',
         child: const Icon(Icons.add),
       ),
     );

@@ -33,7 +33,7 @@ class _NewTournamentAlertState extends State<NewTournamentAlert> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Login'),
+      title: const Text('New Tournament'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

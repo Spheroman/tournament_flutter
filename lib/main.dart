@@ -5,6 +5,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'tournament.dart';
+import 'ui.dart';
 
 // GoRouter configuration
 final _router = GoRouter(
@@ -15,7 +16,8 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/:id',
-      builder: (context, state) => tournament(id: state.pathParameters['id']!),
+      builder: (context, state) =>
+          TournamentPage(id: state.pathParameters['id']!),
     ),
   ],
 );
@@ -70,10 +72,8 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          children: [TournamentList()],
-        ),
+      body: const Center(
+        child: TournamentList(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
@@ -84,51 +84,61 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-Future<Map> fetchTournamentList(String endpoint) async{
-  final response = await http.get(Uri.parse('http://115.165.225.39:3000/api/list/$endpoint'));
-  if(response.statusCode == 200){
-    return jsonDecode(response.body) as Map<String, dynamic>;
-  } else {
-    throw Exception(response.body);
-  }
-}
-
 class TournamentList extends StatefulWidget {
   const TournamentList({super.key});
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TournamentList> createState() => _TournamentList();
 }
 
 class _TournamentList extends State<TournamentList> {
-  late ScrollController controller;
-  late List<Future<Map>> items;
+  ScrollController controller = ScrollController();
+  final List<Map> list = [];
 
   @override
   void initState() {
     super.initState();
-    controller = ScrollController()..addListener(_scrollListener);
-    items.addAll()
+    getTournaments();
+    controller.addListener(() {
+      if (controller.position.atEdge) {
+        if (controller.position.pixels == 0) {
+          print('ListView scroll at top');
+        } else {
+          print('ListView scroll at bottom');
+        }
+      }
+    });
+  }
+
+  Future<void> getTournaments() async {
+    final response =
+        await http.get(Uri.parse('http://115.165.225.39:3000/api/list/all'));
+    if (response.statusCode == 200) {
+      Map vals = jsonDecode(response.body) as Map<String, dynamic>;
+      print(vals['body'][0].runtimeType);
+      setState(() {
+        for (Map val in vals['body']) {
+          list.add(val);
+        }
+      });
+    } else {
+      throw Exception(response.body);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      itemCount: items.length,
+      physics: const AlwaysScrollableScrollPhysics(),
+      scrollDirection: Axis.horizontal,
+      itemCount: list.length,
       itemBuilder: (context, index) {
-        return FutureBuilder(future: items[index], builder: (context, snapshot) {
-          return Card(child: Text(snapshot.data!['Name']),);
-        }, );
+        return UICard(
+          list[index]['Name'],
+          Text("id: ${list[index]['Id']}"),
+          clickable: true,
+          inkWell: InkWell(onTap: () => context.go("/${list[index]['Id']}")),
+        );
       },
     );
-  }
-
-  void _scrollListener() {
-    print(controller.position.extentAfter);
-    if (controller.position.extentAfter ==
-        controller.position.maxScrollExtent) {
-      setState(() {
-        items.addAll(List.generate(42, (index) => 'Inserted $index'));
-      });
-    }
   }
 }

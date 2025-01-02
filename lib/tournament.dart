@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
-class tournament extends StatelessWidget {
-  const tournament({super.key, required this.id});
+class TournamentPage extends StatelessWidget {
+  const TournamentPage({super.key, required this.id});
   final String id;
+  Future<Map> tournament;
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    return Scaffold(
+      appBar: FutureBuilder(future:tournament , builder: (context, tournament) => AppBar(title: ),)
+    )
   }
 }

@@ -65,13 +65,13 @@ class _NewTournamentAlertState extends State<NewTournamentAlert> {
         ],),
       actions: <Widget>[
         TextButton(
-          onPressed: () => Navigator.pop(context, 'Cancel'),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         TextButton(
           onPressed: () async {
             var token = await storage.read(key: "token");
-            var navigator = Navigator.of(context);
+
             var body = jsonEncode({"name": _controller1.text, "componentType": type});
             final response = await http.post(Uri.parse('$url/api/createComponent'), headers: {"Content-Type": "application/json", "Authorization": token!}, body: body);
             if(response.statusCode == 200) {
@@ -79,7 +79,8 @@ class _NewTournamentAlertState extends State<NewTournamentAlert> {
               print(vals['data'][0]['Id']);
               if(!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tournament Created"),));
-              navigator.pop(vals['data'][0]['Id']);
+              var navigator = Navigator.of(context);
+              navigator.pop("/${vals['data'][0]['Id']}");
             }
             else {
               setState(() {

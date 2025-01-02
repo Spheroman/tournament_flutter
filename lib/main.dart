@@ -58,6 +58,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   Future<bool> loggedIn = storage.containsKey(key: "token");
+  UniqueKey key = UniqueKey();
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,13 +116,21 @@ class _MyHomePageState extends State<MyHomePage> {
               ret.add("Owned");
             }
             return ListView.builder(
+              key: key,
               itemCount: ret.length,
               itemBuilder: (context, index) {
                 return UICard(
                   ret[index],
-                  Container(
+                  SizedBox(
                     height: 200,
-                    child: TournamentList(type: ret[index].toLowerCase()),
+                    child: TournamentList(
+                      onReturn: () {
+                        setState(() {
+                          key = UniqueKey();
+                        });
+                      },
+                        type: ret[index].toLowerCase()
+                    ),
                   ),
                 );
               },
@@ -134,7 +145,12 @@ class _MyHomePageState extends State<MyHomePage> {
             builder: (BuildContext context) {
               return const NewTournamentAlert();
             },
-          );
+          ).then((val) {
+            setState(() {
+              key = UniqueKey();
+            });
+            if(val != null && context.mounted) {context.push(val);}
+          });
         },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
@@ -144,7 +160,8 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class TournamentList extends StatefulWidget {
-  const TournamentList({super.key, required this.type});
+  const TournamentList({super.key, required this.type, required this.onReturn});
+  final VoidCallback onReturn;
   final String type;
   @override
   State<TournamentList> createState() => _TournamentList();
@@ -167,6 +184,10 @@ class _TournamentList extends State<TournamentList> {
         }
       }
     });
+  }
+
+  Future<void> refresh() async{
+    getTournaments(widget.type);
   }
 
   Future<void> getTournaments(String type) async {
@@ -208,9 +229,7 @@ class _TournamentList extends State<TournamentList> {
           clickable: true,
           inkWell: InkWell(
               onTap: () => context.push("/${list[index]['Id']}").whenComplete(
-                    () => setState(() {
-                      getTournaments(widget.type);
-                    }),
+                    widget.onReturn
                   )),
         );
       },

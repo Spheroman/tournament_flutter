@@ -74,6 +74,7 @@ class _LoginAlertState extends State<LoginAlert> {
               Map vals = jsonDecode(response.body) as Map<String, dynamic>;
               print(vals['data']['token']);
               await storage.write(key: "token", value: vals['data']['token']);
+              await storage.write(key: "userId", value: vals['data']['userId'].toString());
               if(!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login Successful"),));
               navigator.pop();
@@ -164,15 +165,16 @@ class _SignupAlertState extends State<SignupAlert> {
         ),
         TextButton(
           onPressed: () async {
-            print("ok");
             var navigator = Navigator.of(context);
             var body = jsonEncode({"username": _controller1.text, "password": _controller3.text, "email": _controller2.text});
             final response = await http.post(Uri.parse('$url/api/signup'), headers: {"Content-Type": "application/json"}, body: body);
             print(response.body);
             if(response.statusCode == 201) {
               Map vals = jsonDecode(response.body) as Map<String, dynamic>;
-              print(vals['data']['token']);
+              print(vals['data']);
               await storage.write(key: "token", value: vals['data']['token']);
+              await storage.write(key: "userId", value: vals['data']['userId'].toString());
+              print(await storage.read(key: "userId"));
               if(!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Registration Successful"),));
               navigator.pop();

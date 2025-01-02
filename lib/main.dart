@@ -4,8 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
+import 'package:tournament_app/createTournament.dart';
+import 'package:tournament_app/login.dart';
 import 'tournament.dart';
 import 'ui.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'config.dart';
+
+const storage = FlutterSecureStorage();
 
 // GoRouter configuration
 final _router = GoRouter(
@@ -51,14 +57,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
+  Future<bool> loggedIn = storage.containsKey(key: "token");
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,21 +65,77 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
         actions: [
-          IconButton(
-            onPressed: () => context.go('/1234'),
-            icon: const Icon(Icons.search),
-          ),
+          PopupMenuButton(
+              itemBuilder: (BuildContext context) => <PopupMenuEntry>[
+                    PopupMenuItem(
+                      child: const Text("Login"),
+                      onTap: () {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return const LoginAlert();
+                            }).then((_) => setState(() {
+                              loggedIn = storage.containsKey(key: "token");
+                            }));
+                      },
+                    ),
+                    PopupMenuItem(
+                      child: const Text("Register"),
+                      onTap: () {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return const SignupAlert();
+                            }).then((_) => setState(() {
+                              loggedIn = storage.containsKey(key: "token");
+                            }));
+                      },
+                    ),
+                    PopupMenuItem(
+                      child: const Text("Logout"),
+                      onTap: () async {
+                        await storage.deleteAll();
+                        setState(() {
+                          loggedIn = storage.containsKey(key: "token");
+                        });
+                      },
+                    ),
+                  ])
         ],
       ),
       body: Center(
-        child: Column(children: [
-            UICard("All", Container(height: 200,
-              child:TournamentList(type: "all")))
-            
-        ],),
+        child: FutureBuilder(
+          future: loggedIn,
+          builder: (context, value) {
+            List ret = ["All", "Next"];
+            if (value.hasData && value.data!) {
+              ret.add("Saved");
+              ret.add("Owned");
+            }
+            return ListView.builder(
+              itemCount: ret.length,
+              itemBuilder: (context, index) {
+                return UICard(
+                  ret[index],
+                  Container(
+                    height: 200,
+                    child: TournamentList(type: ret[index].toLowerCase()),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return const NewTournamentAlert();
+            },
+          );
+        },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
@@ -97,7 +152,7 @@ class TournamentList extends StatefulWidget {
 
 class _TournamentList extends State<TournamentList> {
   ScrollController controller = ScrollController();
-  final List<Map> list = [];
+  List<Map> list = [];
 
   @override
   void initState() {
@@ -115,14 +170,23 @@ class _TournamentList extends State<TournamentList> {
   }
 
   Future<void> getTournaments(String type) async {
-    final response =
-        await http.get(Uri.parse('http://localhost:3000/api/list/$type'));
+    String token;
+    if (await storage.containsKey(key: "token")) {
+      token = (await storage.read(key: "token"))!;
+    } else {
+      token = "";
+    }
+    final response = await http.get(
+        Uri.parse('$url/api/list/$type'),
+        headers: {"Authorization": token});
     if (response.statusCode == 200) {
       Map vals = jsonDecode(response.body) as Map<String, dynamic>;
-      print(vals['body'][0].runtimeType);
       setState(() {
-        for (Map val in vals['body']) {
-          list.add(val);
+        if (vals['body'] != null) {
+          list = [];
+          for(var val in vals['body']){
+            list.add(val);
+          }
         }
       });
     } else {
@@ -134,6 +198,7 @@ class _TournamentList extends State<TournamentList> {
   Widget build(BuildContext context) {
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
+      controller: controller,
       scrollDirection: Axis.horizontal,
       itemCount: list.length,
       itemBuilder: (context, index) {
@@ -141,7 +206,12 @@ class _TournamentList extends State<TournamentList> {
           list[index]['Name'],
           Text("id: ${list[index]['Id']}"),
           clickable: true,
-          inkWell: InkWell(onTap: () => context.go("/${list[index]['Id']}")),
+          inkWell: InkWell(
+              onTap: () => context.push("/${list[index]['Id']}").whenComplete(
+                    () => setState(() {
+                      getTournaments(widget.type);
+                    }),
+                  )),
         );
       },
     );

@@ -110,9 +110,10 @@ class _MyHomePageState extends State<MyHomePage> {
         child: FutureBuilder(
           future: loggedIn,
           builder: (context, value) {
-            List ret = ["All", "Next"];
+            List ret = ["All"];
             if (value.hasData && value.data!) {
               ret.add("Owned");
+              ret.add("Saved");
             }
             return ListView.builder(
               key: key,
